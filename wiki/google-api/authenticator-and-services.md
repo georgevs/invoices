@@ -42,7 +42,10 @@ class Authenticator:
 
     if self.credentials and self.credentials.expired:
       request = google_auth_httplib2.Request(httplib2.Http())
-      self.credentials.refresh(request)
+      try:
+        self.credentials.refresh(request)
+      except google.auth.exceptions.RefreshError:
+        pass
       update_credentials = self.credentials.valid
       if not self.credentials.valid:
         self.credentials = None

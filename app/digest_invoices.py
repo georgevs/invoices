@@ -9,7 +9,7 @@ import os
 
 def main(config):
   app = App(config)
-  print(dump_json(list(app.digest_invoices())))
+  print(dump_json(list(app.digest_invoices()), indent=2))
 
 
 class App:
@@ -60,7 +60,7 @@ if __name__ == '__main__':
   import argparse
 
   parser = argparse.ArgumentParser()
-  parser.add_argument('--attachments-path', default='__invoices')
+  parser.add_argument('--attachments-path', default='./data/confidential/invoices')
   args = parser.parse_args()
 
   config = Config(args)

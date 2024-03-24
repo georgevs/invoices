@@ -53,11 +53,11 @@ if __name__ == '__main__':
   import argparse
 
   parser = argparse.ArgumentParser()
-  parser.add_argument('--attachments-path', default='__invoices')
+  parser.add_argument('--attachments-path', default='./data/confidential/invoices')
   parser.add_argument('--bind-addr', type=str)
-  parser.add_argument('--secrets-path', type=str)
+  parser.add_argument('--secrets-path', type=str, default='./secrets')
   parser.add_argument('--debug', action='store_true')
-  parser.add_argument('--log-file-path', type=str)
+  parser.add_argument('--log-file-path', type=str, default='./tmp/logs')
   args = parser.parse_args()
 
   config = Config(args)

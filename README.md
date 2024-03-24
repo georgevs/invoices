@@ -55,7 +55,9 @@ docker container attach --detach-keys='ctrl-x' dev-jupyter
 
 ### Run gmail-py script
 The client machine where authentication runs in the browser must PROXY `8080:172.20.0.220:8080` into the machine where Docker runs `172.20.0.220` container
-```
+```bash
 pip3 install -r requirements.txt 
-python3 app/main.py --bind-addr 172.20.0.220
+docker container inspect dev-jupyter | jq -r '.[].NetworkSettings.Networks["bridge-dev"].IPAddress'
+python3 app/fetch_invoices.py --bind-addr 172.20.0.220
+python3 app/digest_invoices.py > ./data/confidential/invoices.json
 ```

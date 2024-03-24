@@ -1,4 +1,5 @@
 from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 from util.json import load_json, save_json, try_load_json
 
@@ -33,7 +34,10 @@ class Authenticator:
 
     if self.credentials and self.credentials.expired:
       request = google_auth_httplib2.Request(httplib2.Http())
-      self.credentials.refresh(request)
+      try:
+        self.credentials.refresh(request)
+      except RefreshError:
+        pass
       update_credentials = self.credentials.valid
       if not self.credentials.valid:
         self.credentials = None

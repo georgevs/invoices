@@ -20,8 +20,8 @@ class IterEncoder(json.JSONEncoder):
     return json.JSONEncoder.default(self, o)
 
 
-def dump_json(o):
-  return json.dumps(o, cls=IterEncoder, ensure_ascii=False).encode('utf-8').decode()
+def dump_json(o, indent=None):
+  return json.dumps(o, cls=IterEncoder, ensure_ascii=False, indent=indent).encode('utf-8').decode()
 
 
 def try_load_json(file_path):
