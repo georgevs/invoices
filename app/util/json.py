@@ -39,4 +39,4 @@ def load_json(file_path):
 def save_json(file_path, x):
   os.makedirs(os.path.dirname(file_path), exist_ok=True)
   with open(file_path, 'wt') as file:
-    json.dump(x, file, indent=2)
+    json.dump(x, file, cls=IterEncoder, indent=2)

@@ -36,8 +36,8 @@ class App:
     for attachment_info in self.services.attachments.get_message_attachments(message):
       attachment_id = attachment_info.get('attachment_id') 
       data, _ = self.services.attachments.get_attachment(attachment_id, message_id)
-      filename = attachment_info.get('filename') 
-      self.services.storage.put_attachment(message_id, filename, data)
+      file_name = attachment_info.get('file_name') 
+      self.services.storage.put_attachment(message_id, file_name, data)
 
     return dict(message_id=message_id, message_uri=message_uri)
 

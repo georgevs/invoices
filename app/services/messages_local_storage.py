@@ -39,8 +39,8 @@ class MessagesLocalStorage:
     return os.path.join(self.config.messages_path, MessagesLocalStorage.labels_file_name)
 
 
-  def put_attachment(self, message_id, filename, data):
-    file_path = os.path.join(self.config.messages_path, message_id, MessagesLocalStorage.attachments_folder_name, filename)
+  def put_attachment(self, message_id, file_name, data):
+    file_path = os.path.join(self.config.messages_path, message_id, MessagesLocalStorage.attachments_folder_name, file_name)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, 'bw') as file:
       file.write(data)

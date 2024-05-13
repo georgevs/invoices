@@ -10,7 +10,10 @@ import os
 
 def main(config):
   app = App(config)
-  print(dump_json(list(app.digest_invoices())))
+  for invoice_info in app.digest_invoices():
+    error = invoice_info.get('error')
+    if error:
+      print(f"error: {invoice_info.get('uri')}: {error}")
 
 
 class App:
@@ -24,25 +27,22 @@ class App:
 
   def digest_invoices(self):
     for attachment_info in self.services.storage.messages.list_attachments():
-      yield attachment_info
-
-
-  # def digest_invoices(self):
-  #   for attachment in self.services.storage.list_attachments():
-  #     label_name = attachment.get('label_name')
-  #     if (parser := self.parsers.get(label_name)) is not None:
-  #       uri = attachment.get('uri')
-  #       _, ext = os.path.splitext(uri)
-  #       if ext == '.pdf':
-  #         data = self.services.storage.get_attachment(uri)
-  #         lines = iter(Pdf(stream=io.BytesIO(data)))
-  #         digest, error = parser.get_digest(lines)
-  #         invoice = dict(contragent=label_name, uri=uri)
-  #         if digest: 
-  #           invoice.update(digest=digest)
-  #         if error:
-  #           invoice.update(error=error)
-  #         yield invoice
+      label_name = attachment_info.get('label_name')
+      if (parser := self.parsers.get(label_name)) is not None:
+        uri = attachment_info.get('uri')
+        _, ext = os.path.splitext(uri)
+        if ext == '.pdf':
+          data = self.services.storage.messages.get_attachment(uri)
+          lines = iter(Pdf(stream=io.BytesIO(data)))
+          digest, error = parser.get_digest(lines)
+          invoice = dict(contragent=label_name, uri=uri)
+          if digest: 
+            invoice.update(digest=digest)
+            file_name = f"{digest.get('invoice_date')}-{digest.get('invoice')}.json"
+            self.services.storage.invoices.put_invoice(label_name, file_name, invoice)
+          if error:
+            invoice.update(error=error)
+          yield invoice
 
 
 class Services:

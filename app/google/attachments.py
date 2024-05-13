@@ -19,8 +19,8 @@ class Attachments:
 
   def __maybe_attachment(part):
     if ((mime_type := part.get('mimeType')) and
-        (filename := part.get('filename')) and 
+        (file_name := part.get('filename')) and 
         (body := part.get('body')) and
         (attachment_id := body.get('attachmentId')) and
         (size := body.get('size'))):
-      return dict(mime_type=mime_type, filename=filename, attachment_id=attachment_id, size=int(size))
+      return dict(mime_type=mime_type, file_name=file_name, attachment_id=attachment_id, size=int(size))

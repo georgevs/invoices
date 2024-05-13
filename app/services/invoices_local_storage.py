@@ -12,8 +12,8 @@ class InvoicesLocalStorage:
   def __init__(self, config):
     self.config = config
 
-  def put_invoice(self, label_name, filename, invoice):
-    file_path = os.path.join(self.config.invoices_path, label_name, filename)
+  def put_invoice(self, label_name, file_name, invoice):
+    file_path = os.path.join(self.config.invoices_path, label_name, file_name)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     save_json(file_path, invoice)
     return file_path
