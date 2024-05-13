@@ -1,37 +1,45 @@
 from google.attachments import Attachments
 from google.authenticator import Authenticator, Config as AuthenticatorConfig
 from google.gmail import Gmail
-from services.attachments_local_storage import AttachmentsLocalStorage, Config as AttachmentsLocalStorageConfig
+from itertools import chain
+from services.messages_local_storage import MessagesLocalStorage, Config as MessagesLocalStorageConfig
 from util.logging import Config as LoggingConfig
 
 
 def main(config):
   app = App(config)
-  print(list(app.fetch_invoices()))
+  target_labels = ['electrohold', 'sofiyskavoda', 'toplofikaciya']
+  for message in app.fetch_messages(target_labels=target_labels):
+    print(message)
 
 
 class App:
   def __init__(self, config):
     self.services = Services(config)
 
-  def fetch_invoices(self):
-    invoice_labels = self.__list_invoice_labels()
-    for label in invoice_labels:
-      label_name, label_id = label.get('name'), label.get('id')
-      attachments = self.services.attachments.list_attachments(label_ids=[label_id])
-      for attachment in attachments:
-        message_id, attachment_id = attachment.get('message_id'), attachment.get('attachment_id') 
-        data, size = self.services.attachments.get_attachment(attachment_id, message_id)
-        filename = attachment.get('filename') 
-        attachment_uri = self.services.storage.put_attachment(label_name, filename, data)
-        yield dict(size=size, attachment_uri=attachment_uri)
+  def fetch_messages(self, target_labels):
+    labels = list(self.services.gmail.list_labels())
+    self.services.storage.put_labels(labels)
+    is_target_label = (lambda it: it.get('type') == 'user' and it.get('name') in target_labels)
+    target_labels_iter = (it for it in labels if is_target_label(it))
+    message_infos_iter = chain.from_iterable(self.services.gmail.list_messages(label_ids=[it.get('id')]) for it in target_labels_iter)
+    messages_iter = (self.services.gmail.get_message(it.get('id')) for it in message_infos_iter)
+    
+    for message in messages_iter:
+      yield self.fetch_message(message)
 
-  def __list_invoice_labels(self):
-    labels = self.services.gmail.list_labels()
-    is_invoice_label = (lambda it: it.get('type') == 'user' and it.get('name') in App.invoice_types)
-    return filter(is_invoice_label, labels)
 
-  invoice_types = ['electrohold', 'sofiyskavoda', 'toplofikaciya']
+  def fetch_message(self, message):
+    message_id = message.get('id')
+    message_uri = self.services.storage.put_message(message_id, message)
+    
+    for attachment_info in self.services.attachments.get_message_attachments(message):
+      attachment_id = attachment_info.get('attachment_id') 
+      data, _ = self.services.attachments.get_attachment(attachment_id, message_id)
+      filename = attachment_info.get('filename') 
+      self.services.storage.put_attachment(message_id, filename, data)
+
+    return dict(message_id=message_id, message_uri=message_uri)
 
 
 class Services:
@@ -39,13 +47,12 @@ class Services:
     self.authenticator = Authenticator(config.authenticator)
     self.gmail = Gmail(self.authenticator)
     self.attachments = Attachments(self.gmail)
-    self.storage = AttachmentsLocalStorage(config.storage)
-
+    self.storage = MessagesLocalStorage(config.storage)
 
 class Config:
   def __init__(self, args):
     self.authenticator = AuthenticatorConfig(args)
-    self.storage = AttachmentsLocalStorageConfig(args)
+    self.storage = MessagesLocalStorageConfig(args)
     self.logging = LoggingConfig(args) if args.debug else None
 
 
@@ -53,11 +60,11 @@ if __name__ == '__main__':
   import argparse
 
   parser = argparse.ArgumentParser()
-  parser.add_argument('--attachments-path', default='./data/confidential/invoices')
   parser.add_argument('--bind-addr', type=str)
-  parser.add_argument('--secrets-path', type=str, default='./secrets')
   parser.add_argument('--debug', action='store_true')
-  parser.add_argument('--log-file-path', type=str, default='./tmp/logs')
+  parser.add_argument('--log-file-path', type=str, default='./__logs/fetch_invoice_messages.log')
+  parser.add_argument('--messages-path', default='./data/confidential/messages')
+  parser.add_argument('--secrets-path', type=str, default='./secrets')
   args = parser.parse_args()
 
   config = Config(args)

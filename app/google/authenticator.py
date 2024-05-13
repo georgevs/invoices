@@ -6,6 +6,7 @@ from util.json import load_json, save_json, try_load_json
 import google_auth_httplib2
 import httplib2
 import json
+import time
 
 
 class Config:
@@ -56,7 +57,14 @@ class Authenticator:
 
 def authenticate(client_config, scopes, bind_addr):
   flow = InstalledAppFlow.from_client_config(client_config, scopes)
-  return flow.run_local_server(bind_addr=bind_addr, host='localhost', port=8080, open_browser=False, prompt='consent')
+  while True:
+    try:
+      return flow.run_local_server(bind_addr=bind_addr, host='localhost', port=8080, open_browser=False, prompt='consent')
+    except OSError as ex:
+      if ex.errno == 98: # Address already in use
+        time.sleep(5) # the server lingers for at least a minute...
+      else:
+        raise
 
 
 def credentials_to_json(credentials):

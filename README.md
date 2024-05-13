@@ -61,3 +61,9 @@ docker container inspect dev-jupyter | jq -r '.[].NetworkSettings.Networks["brid
 python3 app/fetch_invoices.py --bind-addr 172.20.0.220
 python3 app/digest_invoices.py > ./data/confidential/invoices.json
 ```
+
+### Pull fetched messages
+```bash
+mkdir -p ~/ws/DEV/projects/invoices/data/confidential
+ssh xps tar -czC '~/ws/DEV/projects/invoices/data/confidential' messages | tar -xzvC ~/ws/DEV/projects/invoices/data/confidential
+```
