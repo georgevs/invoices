@@ -106,3 +106,9 @@ app/get_missing_invoices.py
 mkdir -p ~/ws/DEV/projects/invoices/data/confidential
 ssh xps tar -czC '~/ws/DEV/projects/invoices/data/confidential' messages | tar -xzvC ~/ws/DEV/projects/invoices/data/confidential
 ```
+
+### Push source subtree into GitHub
+```
+git subtree split -P projects/invoices -b github/invoices
+git push git@github.com:georgevs/invoices.git github/invoices:main
+```
