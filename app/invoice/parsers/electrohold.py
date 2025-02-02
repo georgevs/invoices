@@ -1,45 +1,30 @@
+'''
+Examples:
+  file:           ./data/confidential/messages/1933a81ded7ae089/attachments/310285668475_0387377905_20241110.pdf
+  invoice:        № 0387377905 / 10.11.2024
+  invoice_date:   № 0387377905 / 10.11.2024
+  total_due:      СУМА ЗА ПЛАЩАНЕ 30,49
+'''
+
+import collections
 import datetime
 import re
-from invoice.parsers.common import (
-  date_from_match,
-  float_comma_from_match,
-  int_from_match,
-  MissingPropertiesError,
-)
 
 
-match_invoice_and_date = re.compile(r'№ (\d+) / (\d+)\.(\d+)\.(\d+)').search
-match_total_due = re.compile(r'СУМА ЗА ПЛАЩАНЕ ([\d,]+)').search
+Invoice = collections.namedtuple('Invoice', ['invoice_id', 'invoice_date', 'total_due'])
+
+search_invoice_id = re.compile(r'№ (\d+) / (\d+)\.(\d+)\.(\d+)').search
+parse_invoice_id = lambda line: (m := search_invoice_id(line)) and (m.group(1), datetime.date(int(m.group(4)), int(m.group(3)), int(m.group(2))))
+
+search_total_due = re.compile(r'СУМА ЗА ПЛАЩАНЕ\s+([\d,]+)').search
+parse_total_due = lambda line: (m := search_total_due(line)) and float(m.group(1).replace(',', '.'))
 
 
-class Parser:
-  def __init__(self):
-    self.invoice = None
-    self.invoice_date = None
-    self.total_due = None
+def error(*args):
+  raise Exception(*args)
 
-  def parse_line(self, line):
-    if self.invoice is None and (match := match_invoice_and_date(line)):
-      self.invoice = int_from_match(match)
-      self.invoice_date = datetime.date(int(match.group(4)), int(match.group(3)), int(match.group(2)))
-    elif self.total_due is None and (match := match_total_due(line)):
-      self.total_due = float_comma_from_match(match)
 
-  def is_complete(self):
-    return (
-      self.invoice is not None and 
-      self.invoice_date is not None and
-      self.total_due is not None
-    )
-  
-  def get_digest(self):
-    digest = dict(
-      invoice=self.invoice,
-      invoice_date=self.invoice_date,
-      total_due=self.total_due,
-    )
-    missing_properties = list(map(lambda it: it[0], filter(lambda it: it[1] is None, digest.items())))
-    if missing_properties:
-      raise MissingPropertiesError(','.join(missing_properties))
-
-    return digest
+def parse_invoice(lines):
+  invoice_id, invoice_date = next(filter(bool, map(parse_invoice_id, lines)), None) or error('No invoice id/date')
+  total_due = next(filter(bool, map(parse_total_due, lines)), None) or error('No total due')
+  return Invoice(invoice_id, invoice_date, total_due)

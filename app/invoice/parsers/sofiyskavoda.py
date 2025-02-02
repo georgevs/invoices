@@ -1,48 +1,39 @@
+'''
+Examples:
+  file:           ./data/confidential/messages/1946f2799c11e6ad/attachments/0000000137766010_signed.pdf
+  invoice:        ФАКТУРА ОРИГИНАЛ № 0137766010
+  invoice_date:   Дата на издаване 15/01/2025
+  total_due:      ОБЩА ДЪЛЖИМА СУМА           7.39 лв
+
+  file:           ./data/confidential/messages/18ddca70d807feb5/attachments/2021-02-12-0103406574-izravnitelna.pdf
+  invoice:        КРЕДИТНО ИЗВЕСТИЕ ОРИГИНАЛ № 0103406574
+  invoice date:   Дата на издаване 12/02/2021
+  total_due:      ОБЩА ДЪЛЖИМА СУМА         -22.03 лв
+'''
+
+import collections
+import datetime
 import re
-from invoice.parsers.common import (
-  date_from_match,
-  float_from_match,
-  int_from_match,
-  MissingPropertiesError,
-)
 
 
-match_invoice = re.compile(r'ФАКТУРА ОРИГИНАЛ № (\d+)').search
-match_invoice_date = re.compile(r'Дата на издаване (\d+)/(\d+)/(\d+)').search
-# match_total_due = re.compile(r'ОБЩА ДЪЛЖИМА СУМА \s*([\d\.]+) лв').search
-match_invoice_due = re.compile(f'Сума по фактура: \s*([\d\.]+) лв').search
+Invoice = collections.namedtuple('Invoice', ['invoice_id', 'invoice_date', 'total_due'])
+
+search_invoice_id = re.compile(r'ОРИГИНАЛ № (\d+)').search
+parse_invoice_id = lambda line: (m := search_invoice_id(line)) and m.group(1)
+
+search_invoice_date = re.compile(r'Дата на издаване (\d+)/(\d+)/(\d+)').search
+parse_invoice_date = lambda line: (m := search_invoice_date(line)) and datetime.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+
+search_total_due = re.compile(r'ОБЩА ДЪЛЖИМА СУМА\s+(-?[\d+\.]+)').search
+parse_total_due = lambda line: (m := search_total_due(line)) and float(m.group(1))
 
 
-class Parser:
-  def __init__(self):
-    self.invoice = None
-    self.invoice_date = None
-    self.invoice_due = None
+def error(*args):
+  raise Exception(*args)
 
-  def parse_line(self, line):
-    if self.invoice is None and (match := match_invoice(line)):
-      self.invoice = int_from_match(match)
-    elif self.invoice_date is None and (match := match_invoice_date(line)):
-      self.invoice_date = date_from_match(match)
-    elif self.invoice_due is None and (match := match_invoice_due(line)):
-      self.invoice_due = float_from_match(match)
 
-  def is_complete(self):
-    return (
-      self.invoice is not None and 
-      self.invoice_date is not None and
-      self.invoice_due is not None
-    )
-  
-  def get_digest(self):
-    digest = dict(
-      invoice=self.invoice,
-      invoice_date=self.invoice_date,
-      invoice_due=self.invoice_due,
-    )
-    missing_properties = list(map(lambda it: it[0], filter(lambda it: it[1] is None, digest.items())))
-    if missing_properties:
-      raise MissingPropertiesError(','.join(missing_properties))
-
-    return digest
-   
+def parse_invoice(lines):
+  invoice_id = next(filter(bool, map(parse_invoice_id, lines)), None) or error('No invoice id')
+  invoice_date = next(filter(bool, map(parse_invoice_date, lines)), None) or error('No invoice date')
+  total_due = next(filter(bool, map(parse_total_due, lines)), None) or error('No total due')
+  return Invoice(invoice_id, invoice_date, total_due)
