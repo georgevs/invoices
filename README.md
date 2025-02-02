@@ -47,19 +47,48 @@ docker container run -it \
   --volume "/home/$USER/ws/NOTES/wiki:/home/$USER/ws/NOTES/wiki" \
   -d dev-jupyter
 
+docker container inspect dev-jupyter | jq -r '.[].NetworkSettings.Networks["bridge-dev"].IPAddress'
 docker container start -ia --detach-keys='ctrl-x' dev-jupyter
 docker container attach --detach-keys='ctrl-x' dev-jupyter
 
 ~/.local/bin/jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser
 ```
 
-### Run gmail-py script
+### Run scripts
 The client machine where authentication runs in the browser must PROXY `8080:172.20.0.220:8080` into the machine where Docker runs `172.20.0.220` container
 ```bash
+docker container start -ia --detach-keys='ctrl-x' dev-jupyter
+cd ~/ws/DEV/projects/invoices
 pip3 install -r requirements.txt 
-docker container inspect dev-jupyter | jq -r '.[].NetworkSettings.Networks["bridge-dev"].IPAddress'
-python3 app/fetch_invoices.py --bind-addr 172.20.0.220
-python3 app/digest_invoices.py > ./data/confidential/invoices.json
+app/fetch_messages.py --bind-addr 172.20.0.220 | tee ./data/confidential/messages.log
+app/digest_invoices.py | tee ./data/confidential/invoices.log
+app/get_missing_invoices.py
+```
+
+### Parse toplofikaciya
+```
+app/messages_db.py | grep toplofikaciya | cut -f2 | tee __toplofikaciya.lst
+cat __toplofikaciya.lst | xargs -I {} app/toplofikaciya.py '{}' 2>__toplofikaciya.err.lst ; mv __toplofikaciya.err.lst __toplofikaciya.lst 
+find ./data/confidential/invoices -type f -name '*.json' | grep toplofikaciya | sort
+```
+
+### Parse sofiyskavoda
+```
+app/messages_db.py | grep sofiyskavoda | cut -f2 | tee __sofiyskavoda.lst
+cat __sofiyskavoda.lst | xargs -I {} app/sofiyskavoda.py '{}' 2>__sofiyskavoda.err.lst ; mv __sofiyskavoda.err.lst __sofiyskavoda.lst 
+find ./data/confidential/invoices -type f -name '*.json' | grep sofiyskavoda | sort
+```
+
+### Parse electrohold
+```
+app/messages_db.py | grep electrohold | cut -f2 | tee __electrohold.lst
+cat __electrohold.lst | xargs -I {} app/electrohold.py '{}' 2>__electrohold.err.lst ; mv __electrohold.err.lst __electrohold.lst 
+find ./data/confidential/invoices -type f -name '*.json' | grep electrohold | sort
+```
+
+### Check for missing invoices
+```
+app/get_missing_invoices.py
 ```
 
 ### Pull fetched messages

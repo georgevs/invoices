@@ -1,16 +1,13 @@
 import itertools
 import pdfplumber
-import re
 
 
 class Pdf:
-  def __init__(self, stream=None, file_path=None):
-    assert stream or file_path
-    self.stream = stream
-    self.file_path = file_path
+  def __init__(self, stream=None, file_path=None, path_or_fp=None):
+    self.path_or_fp = stream or file_path or path_or_fp
 
   def __iter__(self):
-    with pdfplumber.open(path_or_fp=self.stream or self.file_path) as pdf:
+    with pdfplumber.open(path_or_fp=self.path_or_fp) as pdf:
       for page in pdf.pages:
         yield from Pdf.__get_page_lines(page)
 

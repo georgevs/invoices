@@ -56,8 +56,9 @@ class MessagesLocalStorage:
       label_name = next((label for it in message_label_ids if (label := user_labels.get(it)) is not None), None)
       if label_name:
         attachments_folder_path = os.path.join(os.path.dirname(message_file_path), MessagesLocalStorage.attachments_folder_name)
-        for file_path in scandir(attachments_folder_path, recursive=False):
-          yield dict(label_name=label_name, uri=file_path)
+        if os.path.isdir(attachments_folder_path):
+          for file_path in scandir(attachments_folder_path, recursive=False):
+            yield dict(label_name=label_name, uri=file_path)
 
 
   def get_attachment(self, uri):

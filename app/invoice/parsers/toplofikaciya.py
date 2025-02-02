@@ -7,7 +7,7 @@ from invoice.parsers.common import (
 )
 
 
-match_invoice = re.compile(r'ФАКТУРА № (\d+) - ОРИГИНАЛ').search
+match_invoice = re.compile(r'ФАКТУРА № (\d+)\s*-\s*ОРИГИНАЛ').search
 match_invoice_date = re.compile(r'Дата на данъчно събитие - (\d+)\.(\d+)\.(\d+) г\.').search
 match_total_due = re.compile(r'ВСИЧКО по фактура: ([\d,]+)').search
 

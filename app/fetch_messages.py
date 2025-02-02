@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from google.attachments import Attachments
 from google.authenticator import Authenticator, Config as AuthenticatorConfig
 from google.gmail import Gmail

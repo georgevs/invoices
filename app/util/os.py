@@ -12,3 +12,6 @@ def scandir(folder_path, recursive=True):
             folder_paths.append(entry.path)
         else:
           yield entry.path 
+
+def has_ext(*exts):
+  return lambda file_path: os.path.splitext(file_path)[1] in exts
